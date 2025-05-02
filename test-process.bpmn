@@ -1,21 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="TestProcess" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1"/>
-    <bpmn:endEvent id="EndEvent_1"/>
-    <bpmn:sequenceFlow id="SequenceFlow_1" sourceRef="StartEvent_1" targetRef="EndEvent_1"/>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="LetterReviewProcess" name="Letter Review Process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Letter Received">
+      <bpmn:outgoing>Flow_StartToTask</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_StartToTask" sourceRef="StartEvent_1" targetRef="ReviewLetterTask" />
+    <bpmn:userTask id="ReviewLetterTask" name="Review Letter">
+      <bpmn:incoming>Flow_StartToTask</bpmn:incoming>
+      <bpmn:outgoing>Flow_TaskToGateway</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_TaskToGateway" sourceRef="ReviewLetterTask" targetRef="DecisionGateway" />
+    <bpmn:exclusiveGateway id="DecisionGateway" name="Accepted?">
+      <bpmn:incoming>Flow_TaskToGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Accepted</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_Accepted" name="Yes" sourceRef="DecisionGateway" targetRef="EndEvent_Accepted">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=reviewOutcome = "accepted"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Rejected" name="No" sourceRef="DecisionGateway" targetRef="EndEvent_Rejected">
+       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=reviewOutcome = "rejected"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="EndEvent_Accepted" name="Letter Accepted">
+      <bpmn:incoming>Flow_Accepted</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Rejected" name="Letter Rejected">
+      <bpmn:incoming>Flow_Rejected</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="TestProcess">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="LetterReviewProcess">
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
-        <dc:Bounds x="173" y="102" width="36" height="36"/>
+        <dc:Bounds x="179" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="159" y="145" width="78" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
-        <dc:Bounds x="272" y="102" width="36" height="36"/>
+      <bpmndi:BPMNShape id="Activity_1q5o7z4_di" bpmnElement="ReviewLetterTask">
+        <dc:Bounds x="270" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="SequenceFlow_1_di" bpmnElement="SequenceFlow_1">
-        <di:waypoint x="209" y="120"/>
-        <di:waypoint x="272" y="120"/>
+      <bpmndi:BPMNShape id="Gateway_1f0x8z7_di" bpmnElement="DecisionGateway" isMarkerVisible="true">
+        <dc:Bounds x="425" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423" y="71" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1h6x8z7_di" bpmnElement="EndEvent_Accepted">
+        <dc:Bounds x="532" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="510" y="145" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0a1b2c3_di" bpmnElement="EndEvent_Rejected">
+        <dc:Bounds x="532" y="182" width="36" height="36" />
+         <bpmndi:BPMNLabel>
+          <dc:Bounds x="510" y="225" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_StartToTask_di" bpmnElement="Flow_StartToTask">
+        <di:waypoint x="215" y="120" />
+        <di:waypoint x="270" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TaskToGateway_di" bpmnElement="Flow_TaskToGateway">
+        <di:waypoint x="370" y="120" />
+        <di:waypoint x="425" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Accepted_di" bpmnElement="Flow_Accepted">
+         <di:waypoint x="475" y="120" />
+         <di:waypoint x="532" y="120" />
+         <bpmndi:BPMNLabel>
+          <dc:Bounds x="495" y="102" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Rejected_di" bpmnElement="Flow_Rejected">
+         <di:waypoint x="450" y="145" />
+         <di:waypoint x="450" y="200" />
+         <di:waypoint x="532" y="200" />
+          <bpmndi:BPMNLabel>
+          <dc:Bounds x="456" y="170" width="15" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

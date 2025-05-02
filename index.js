@@ -27,6 +27,8 @@ const c8 = new Camunda8({
 const zeebe = c8.getZeebeGrpcApiClient();
 // Get the Operate API client
 const operate = c8.getOperateApiClient(); // Initialize Operate client
+// Get the Tasklist API client
+const tasklist = c8.getTasklistApiClient(); // Initialize Tasklist client
 
 // Example: Fetch and print the Zeebe cluster topology
 async function getTopology() {
@@ -67,11 +69,17 @@ async function startProcessInstance(bpmnProcessId) {
     return;
   }
   try {
-    console.log(`\nAttempting to start instance of process: ${bpmnProcessId}...`);
+    console.log(`\nAttempting to start instance of process: ${bpmnProcessId} with initial data...`);
+    // Define initial variables
+    const initialVariables = {
+      letterId: `L-${Date.now()}`, // Example dynamic ID
+      sender: 'Musabeh Alali'
+    };
+    console.log('Initial Variables:', JSON.stringify(initialVariables, null, 2));
+
     const result = await zeebe.createProcessInstance({
       bpmnProcessId: bpmnProcessId,
-      // You can pass variables here if needed, e.g.:
-      // variables: { myVariable: 'testValue' }
+      variables: initialVariables // Pass the variables here
     });
     console.log('Process instance started successfully:');
     console.log(JSON.stringify(result, null, 2));
@@ -106,6 +114,53 @@ async function checkProcessInstanceStatus(processInstanceKey) {
   }
 }
 
+// Function to query Tasklist for available tasks
+async function queryTasklist(processInstanceKey) {
+  if (!processInstanceKey) {
+    console.error('\nCannot query Tasklist without a processInstanceKey.');
+    return null;
+  }
+  try {
+    console.log(`\nQuerying Tasklist for tasks related to instance ${processInstanceKey}...`);
+    // Add a delay to allow Tasklist to index the new task
+    await new Promise(resolve => setTimeout(resolve, 7000)); // Wait 7 seconds (increased from 3)
+
+    // Search for tasks - look for CREATED or ASSIGNED
+    const tasks = await tasklist.searchTasks({
+      stateIn: ['CREATED', 'ASSIGNED'], // Look for tasks ready or already assigned
+      processInstanceKey: processInstanceKey
+    });
+
+    console.log('Tasks found in Tasklist:');
+    console.log(JSON.stringify(tasks, null, 2));
+
+    // Return the first task found for potential completion
+    return tasks.length > 0 ? tasks[0] : null;
+  } catch (error) {
+    console.error('Failed to query Tasklist:', error);
+    return null;
+  }
+}
+
+// Function to complete a task in Tasklist
+async function completeTask(taskId) {
+  if (!taskId) {
+    console.error('\nCannot complete task without a taskId.');
+    return false;
+  }
+  try {
+    console.log(`\nAttempting to complete task ${taskId}...`);
+    // You can pass variables during completion if needed:
+    // await tasklist.completeTask(taskId, { outcome: 'approved' });
+    await tasklist.completeTask(taskId, {}); // Complete with empty variables
+    console.log(`Task ${taskId} completed successfully.`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to complete task ${taskId}:`, error);
+    return false;
+  }
+}
+
 // Main execution function
 async function main() {
   await getTopology(); // Check connection first
@@ -117,8 +172,16 @@ async function main() {
     const processInstanceKey = await startProcessInstance(bpmnProcessId);
     if (processInstanceKey) {
       console.log(`\nProcess instance started with key: ${processInstanceKey}`);
-      // Check the status of the instance via Operate
-      await checkProcessInstanceStatus(processInstanceKey);
+
+      // Query Tasklist for the user task created by this instance
+      const task = await queryTasklist(processInstanceKey);
+
+      if (task) {
+        console.log(`\nFound task '${task.name}' with ID: ${task.id}`);
+        console.log('\nPlease go to the Tasklist UI to complete this task manually.');
+      } else {
+        console.log('\nNo CREATED or ASSIGNED task found for this instance in Tasklist yet. Check Tasklist UI.');
+      }
     }
   }
 }
@@ -126,7 +189,6 @@ async function main() {
 main();
 
 // You can add more SDK calls here, for example:
-const tasklist = c8.getTasklistApiClient();
 const modeler = c8.getModelerApiClient();
 
 // Example: List process definitions using Operate API
